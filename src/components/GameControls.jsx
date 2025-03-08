@@ -22,7 +22,7 @@ const GameControls = ({ onInput, gameOver, isPaused, onRestart }) => {
           e.preventDefault();
           break;
         case 'ArrowUp':
-          onInput('rotateClockwise');
+          onInput('rotate');
           e.preventDefault();
           break;
         case 'z':

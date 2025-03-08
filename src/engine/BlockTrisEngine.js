@@ -201,6 +201,7 @@ class BlockTrisEngine {
         shape: [...this.blockDefinitions[blockType].shape], // Clone the shape
         color: this.blockDefinitions[blockType].color,
         special: this.blockDefinitions[blockType].special,
+        effect: this.blockDefinitions[blockType].effect,
         rarity: this.blockDefinitions[blockType].rarity
       };
     }
@@ -351,7 +352,8 @@ class BlockTrisEngine {
               this.board[boardY][boardX] = {
                 color: this.currentBlock.color,
                 type: this.currentBlock.type,
-                special: this.currentBlock.special
+                special: this.currentBlock.special,
+                effect: this.currentBlock.effect
               };
             }
           }
@@ -374,9 +376,15 @@ class BlockTrisEngine {
     // Process any special effects from blocks
     processSpecialBlockEffects() {
       const special = this.currentBlock.special;
-      if (!special) return;
+      const effect = this.currentBlock.effect;
       
-      switch (special) {
+      // Handle both special and effect properties
+      if (!special && !effect) return;
+      
+      // Determine which property to use
+      const effectType = special || effect;
+      
+      switch (effectType) {
         case 'explosion':
           // Clear a 3x3 area around the center of the block
           this.createExplosion();

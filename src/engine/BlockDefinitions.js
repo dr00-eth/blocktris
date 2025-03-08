@@ -163,7 +163,20 @@ export const SPECIAL_BLOCKS = [
     special: true,
     effect: 'multiplier',
     description: 'Doubles points for the next 30 seconds'
-  }
+  },
+  {
+    id: 13,
+    name: 'Gravity',
+    color: '#8B4513', // Brown
+    shape: [
+      [1, 1, 1],
+      [1, 0, 1],
+      [1, 1, 1]
+    ],
+    special: true,
+    effect: 'gravity',
+    description: 'Pulls all blocks above down after placement'
+  },
 ];
 
 // All blocks combined

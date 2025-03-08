@@ -10,7 +10,8 @@ import {
   calculateLevel,
   calculateDropSpeed,
   findGhostPosition,
-  isGameOver
+  isGameOver,
+  applySpecialEffect
 } from '../utils/gameUtils';
 
 export function useGameEngine(gameId, seed) {
@@ -47,28 +48,33 @@ export function useGameEngine(gameId, seed) {
   // Lock the current block in place
   const lockBlock = useCallback(() => {
     const state = gameStateRef.current;
-    const { currentBlock, currentBlockPosition, board, score, linesCleared } = state;
+    let { board, currentBlock, currentBlockPosition, score, linesCleared } = state;
     
     // Check if currentBlock is null
     if (!currentBlock) return;
     
     // Place block on board
-    const newBoard = placeBlock(board, currentBlock, currentBlockPosition.x, currentBlockPosition.y);
+    board = placeBlock(board, currentBlock, currentBlockPosition.x, currentBlockPosition.y);
+    
+    // Apply special effect if any
+    if (currentBlock.special && currentBlock.effect) {
+      const effectResult = applySpecialEffect(board, currentBlock.effect, currentBlockPosition.x, currentBlockPosition.y);
+      board = effectResult.board;
+      score += effectResult.scoreBonus;
+    }
     
     // Check for completed lines
-    const completedLines = checkCompletedLines(newBoard);
+    const completedLines = checkCompletedLines(board);
     const newLinesCleared = linesCleared + completedLines.length;
     const newLevel = calculateLevel(newLinesCleared);
-    
-    // Calculate score
     const lineScore = calculateLineScore(completedLines.length, newLevel);
-    const newScore = score + lineScore;
+    score += lineScore;
     
     // Remove completed lines
-    const updatedBoard = removeLines(newBoard, completedLines);
+    board = removeLines(board, completedLines);
     
     // Check if game is over
-    const gameIsOver = isGameOver(updatedBoard);
+    const gameIsOver = isGameOver(board);
     
     if (!gameIsOver) {
       // Get next block
@@ -79,12 +85,12 @@ export function useGameEngine(gameId, seed) {
         // If nextBlock is null, create a new game state with the next block
         setGameState(prev => ({
           ...prev,
-          board: updatedBoard,
+          board,
           currentBlock: nextBlock,
           currentBlockPosition: { x: Math.floor((10 - nextBlock.shape[0].length) / 2), y: 0 },
           ghostPosition: { x: Math.floor((10 - nextBlock.shape[0].length) / 2), y: 0 },
           nextBlock: getBlockFromSeed(seed, blockIndexRef.current++),
-          score: newScore,
+          score,
           linesCleared: newLinesCleared,
           level: newLevel
         }));
@@ -94,22 +100,17 @@ export function useGameEngine(gameId, seed) {
         const initialY = 0;
         
         // Calculate ghost position
-        const ghostY = findGhostPosition(
-          updatedBoard, 
-          state.nextBlock, 
-          initialX, 
-          initialY
-        );
+        const ghostY = findGhostPosition(board, state.nextBlock, initialX, initialY);
         
         // Update game state
         setGameState(prev => ({
           ...prev,
-          board: updatedBoard,
+          board,
           currentBlock: prev.nextBlock,
           currentBlockPosition: { x: initialX, y: initialY },
           ghostPosition: { x: initialX, y: ghostY },
-          nextBlock: nextBlock,
-          score: newScore,
+          nextBlock,
+          score,
           linesCleared: newLinesCleared,
           level: newLevel
         }));
@@ -118,8 +119,8 @@ export function useGameEngine(gameId, seed) {
       // Game over
       setGameState(prev => ({
         ...prev,
-        board: updatedBoard,
-        score: newScore,
+        board,
+        score,
         linesCleared: newLinesCleared,
         level: newLevel,
         gameOver: true

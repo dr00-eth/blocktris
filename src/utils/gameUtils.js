@@ -199,6 +199,36 @@ export const isGameOver = (board) => {
 };
 
 /**
+ * Apply gravity to the entire board, pulling all blocks down to fill gaps.
+ * @param {Array} board - Game board
+ * @returns {Array} Updated board after applying gravity
+ */
+export const applyGravity = (board) => {
+  const newBoard = JSON.parse(JSON.stringify(board));
+  const height = board.length;
+  const width = board[0].length;
+
+  for (let col = 0; col < width; col++) {
+    // Collect all non-null cells in the column
+    const columnCells = [];
+    for (let row = 0; row < height; row++) {
+      if (newBoard[row][col] !== null) {
+        columnCells.push(newBoard[row][col]);
+      }
+    }
+    // Fill the column from the bottom
+    for (let row = height - 1; row >= 0; row--) {
+      if (columnCells.length > 0) {
+        newBoard[row][col] = columnCells.pop();
+      } else {
+        newBoard[row][col] = null;
+      }
+    }
+  }
+  return newBoard;
+};
+
+/**
  * Apply special block effect
  * @param {Array} board - Game board
  * @param {string} effect - Effect type
@@ -283,6 +313,11 @@ export const applySpecialEffect = (board, effect, x, y) => {
       }
       
       scoreBonus += 200;
+      break;
+
+    case 'gravity':
+      newBoard = applyGravity(newBoard);
+      scoreBonus = 50; // Bonus for using gravity
       break;
       
     default:

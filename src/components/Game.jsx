@@ -17,38 +17,19 @@ const Game = ({ wallet }) => {
   // Initialize game engine with local seed
   const { gameState, handleInput, finalizeGame } = useGameEngine(gameId, gameSeed);
   
-  // Handle keyboard input
+  // Handle pause/resume keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (gameStatus === 'ended') return;
       
-      switch (e.key) {
-        case 'ArrowLeft':
-          handleInput('left');
-          break;
-        case 'ArrowRight':
-          handleInput('right');
-          break;
-        case 'ArrowDown':
-          handleInput('down');
-          break;
-        case 'ArrowUp':
-          handleInput('rotate');
-          break;
-        case ' ':
-          handleInput('hardDrop');
-          break;
-        case 'p':
-          setGameStatus(prev => prev === 'playing' ? 'paused' : 'playing');
-          break;
-        default:
-          break;
+      if (e.key === 'p') {
+        setGameStatus(prev => prev === 'playing' ? 'paused' : 'playing');
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleInput, gameStatus]);
+  }, [gameStatus]);
   
   // Start game when component mounts
   useEffect(() => {
