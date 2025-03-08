@@ -315,6 +315,18 @@ export const applySpecialEffect = (board, effect, x, y) => {
       scoreBonus += 200;
       break;
 
+    case 'timeFreeze':
+      // For timeFreeze, we don't modify the board
+      // The effect will be handled by the game engine's drop speed calculation
+      scoreBonus += 75;
+      break;
+
+    case 'multiplier':
+      // For multiplier, we don't modify the board
+      // The effect will be handled by the game engine's score calculation
+      scoreBonus += 50;
+      break;
+
     case 'gravity':
       newBoard = applyGravity(newBoard);
       scoreBonus = 50; // Bonus for using gravity

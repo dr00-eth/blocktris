@@ -26,7 +26,9 @@ export function useGameEngine(gameId, seed) {
     linesCleared: 0,
     level: 1,
     gameOver: false,
-    actions: []
+    actions: [],
+    timeFreezeUntil: 0,
+    scoreMultiplierUntil: 0 // Add multiplier state
   });
   
   // Game loop references
@@ -60,7 +62,32 @@ export function useGameEngine(gameId, seed) {
     if (currentBlock.special && currentBlock.effect) {
       const effectResult = applySpecialEffect(board, currentBlock.effect, currentBlockPosition.x, currentBlockPosition.y);
       board = effectResult.board;
-      score += effectResult.scoreBonus;
+      
+      // Apply score multiplier if active
+      const now = Date.now();
+      if (state.scoreMultiplierUntil > now) {
+        score += effectResult.scoreBonus * 2;
+      } else {
+        score += effectResult.scoreBonus;
+      }
+      
+      // Handle timeFreeze effect
+      if (currentBlock.effect === 'timeFreeze') {
+        const freezeDuration = 10000; // 10 seconds
+        setGameState(prev => ({
+          ...prev,
+          timeFreezeUntil: Date.now() + freezeDuration
+        }));
+      }
+      
+      // Handle multiplier effect
+      if (currentBlock.effect === 'multiplier') {
+        const multiplierDuration = 30000; // 30 seconds
+        setGameState(prev => ({
+          ...prev,
+          scoreMultiplierUntil: Date.now() + multiplierDuration
+        }));
+      }
     }
     
     // Check for completed lines
@@ -68,7 +95,14 @@ export function useGameEngine(gameId, seed) {
     const newLinesCleared = linesCleared + completedLines.length;
     const newLevel = calculateLevel(newLinesCleared);
     const lineScore = calculateLineScore(completedLines.length, newLevel);
-    score += lineScore;
+    
+    // Apply score multiplier to line clear score if active
+    const now = Date.now();
+    if (state.scoreMultiplierUntil > now) {
+      score += lineScore * 2;
+    } else {
+      score += lineScore;
+    }
     
     // Remove completed lines
     board = removeLines(board, completedLines);
@@ -178,7 +212,13 @@ export function useGameEngine(gameId, seed) {
     
     gameLoopRef.current = setInterval(() => {
       const now = Date.now();
-      const dropSpeed = calculateDropSpeed(gameStateRef.current.level);
+      const state = gameStateRef.current;
+      let dropSpeed = calculateDropSpeed(state.level);
+      
+      // Apply time freeze effect if active
+      if (state.timeFreezeUntil > now) {
+        dropSpeed *= 2; // Slow down the drop speed
+      }
       
       if (now - lastDropTimeRef.current > dropSpeed) {
         // Use the moveDown ref to avoid circular dependencies
