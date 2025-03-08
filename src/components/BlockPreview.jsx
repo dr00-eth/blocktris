@@ -1,49 +1,37 @@
 import React from 'react';
-import { Stage, Layer, Rect, Group } from 'react-konva';
+import { Stage, Layer, Rect } from 'react-konva';
 
-const CELL_SIZE = 20;
+const CELL_SIZE = 25;
+const PREVIEW_SIZE = 4;
 
 const BlockPreview = ({ nextBlock }) => {
-  if (!nextBlock) {
-    return (
-      <div className="block-preview">
-        <h3 className="text-lg font-medium mb-2">Next Block</h3>
-        <div className="h-24 w-24 border border-gray-700 rounded-md flex items-center justify-center">
-          <span className="text-gray-500">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const { shape, color } = nextBlock;
-  
-  // Calculate dimensions needed for preview
-  const width = shape[0].length * CELL_SIZE;
-  const height = shape.length * CELL_SIZE;
-  
-  // Calculate preview box size (with some padding)
-  const previewSize = Math.max(width, height) + CELL_SIZE * 2;
-  
-  // Calculate offset to center the block
-  const offsetX = (previewSize - width) / 2;
-  const offsetY = (previewSize - height) / 2;
-
-  const renderBlock = () => {
+  // Render the next block
+  const renderNextBlock = () => {
+    if (!nextBlock) return [];
+    
+    const { shape, color } = nextBlock;
     const blocks = [];
+    
+    // Calculate offset to center the block in the preview
+    const width = shape[0].length;
+    const height = shape.length;
+    const offsetX = Math.floor((PREVIEW_SIZE - width) / 2);
+    const offsetY = Math.floor((PREVIEW_SIZE - height) / 2);
     
     for (let y = 0; y < shape.length; y++) {
       for (let x = 0; x < shape[y].length; x++) {
         if (shape[y][x]) {
           blocks.push(
             <Rect
-              key={`next-${x}-${y}`}
-              x={offsetX + x * CELL_SIZE}
-              y={offsetY + y * CELL_SIZE}
+              key={`preview-${x}-${y}`}
+              x={(offsetX + x) * CELL_SIZE}
+              y={(offsetY + y) * CELL_SIZE}
               width={CELL_SIZE}
               height={CELL_SIZE}
-              fill={color || '#3366FF'}
+              fill={color}
               stroke="#000"
               strokeWidth={1}
+              cornerRadius={2}
             />
           );
         }
@@ -52,28 +40,54 @@ const BlockPreview = ({ nextBlock }) => {
     
     return blocks;
   };
-
+  
+  // Render the preview grid
+  const renderPreviewGrid = () => {
+    const grid = [];
+    
+    for (let y = 0; y < PREVIEW_SIZE; y++) {
+      for (let x = 0; x < PREVIEW_SIZE; x++) {
+        grid.push(
+          <Rect
+            key={`preview-grid-${x}-${y}`}
+            x={x * CELL_SIZE}
+            y={y * CELL_SIZE}
+            width={CELL_SIZE}
+            height={CELL_SIZE}
+            stroke="#333"
+            strokeWidth={1}
+            fill="#111"
+          />
+        );
+      }
+    }
+    
+    return grid;
+  };
+  
   return (
-    <div className="block-preview">
-      <h3 className="text-lg font-medium mb-2">Next Block</h3>
-      <Stage
-        width={previewSize}
-        height={previewSize}
-        className="border border-gray-700 rounded-md bg-gray-900"
-      >
-        <Layer>
-          <Group>{renderBlock()}</Group>
-        </Layer>
-      </Stage>
-      {nextBlock.rarity && nextBlock.rarity !== 'common' && (
-        <div className="mt-1 text-sm">
-          <span className={`${nextBlock.rarity === 'legendary' ? 'text-yellow-500' : 'text-blue-400'} font-medium`}>
-            {nextBlock.rarity.charAt(0).toUpperCase() + nextBlock.rarity.slice(1)}
+    <div className="block-preview bg-gray-800 p-4 rounded-md">
+      <h3 className="text-lg font-medium mb-2 text-center">Next Block</h3>
+      <div className="flex justify-center">
+        <Stage
+          width={PREVIEW_SIZE * CELL_SIZE}
+          height={PREVIEW_SIZE * CELL_SIZE}
+          className="border border-gray-700 rounded-md overflow-hidden"
+        >
+          <Layer>
+            {renderPreviewGrid()}
+            {renderNextBlock()}
+          </Layer>
+        </Stage>
+      </div>
+      
+      {nextBlock && nextBlock.special && (
+        <div className="mt-2 text-center">
+          <span className="text-xs font-medium px-2 py-1 bg-purple-700 rounded-full">
+            {nextBlock.name} - Special
           </span>
-          {nextBlock.special && (
-            <span className="text-gray-400 ml-1">
-              ({nextBlock.special})
-            </span>
+          {nextBlock.effect && (
+            <p className="text-xs mt-1 text-gray-400">{nextBlock.description}</p>
           )}
         </div>
       )}

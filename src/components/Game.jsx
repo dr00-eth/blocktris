@@ -1,41 +1,93 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import GameBoard from './GameBoard';
 import GameControls from './GameControls';
 import BlockPreview from './BlockPreview';
 import ScoreBoard from './ScoreBoard';
 import GameFinalize from './GameFinalize';
 import { useGameEngine } from '../hooks/useGameEngine';
+import { getBlockFromSeed } from '../engine/BlockDefinitions';
 
-const Game = ({ gameId, seed, blockSequence, blockTrisContract }) => {
-  const [gameStatus, setGameStatus] = useState('new'); // new, playing, ended
-  const { gameState, handleInput, finalizeGame } = useGameEngine(gameId, seed, blockSequence);
+const Game = ({ wallet }) => {
+  const [gameStatus, setGameStatus] = useState('new'); // new, playing, paused, ended
   
-  // Handle game input
-  const onInput = useCallback((inputType) => {
+  // Generate a random seed for testing without blockchain
+  const [gameSeed] = useState(() => Math.floor(Math.random() * 1000000));
+  const [gameId] = useState(() => Date.now()); // Use timestamp as temporary game ID
+  
+  // Initialize game engine with local seed
+  const { gameState, handleInput, finalizeGame } = useGameEngine(gameId, gameSeed);
+  
+  // Handle keyboard input
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (gameStatus === 'ended') return;
+      
+      switch (e.key) {
+        case 'ArrowLeft':
+          handleInput('left');
+          break;
+        case 'ArrowRight':
+          handleInput('right');
+          break;
+        case 'ArrowDown':
+          handleInput('down');
+          break;
+        case 'ArrowUp':
+          handleInput('rotate');
+          break;
+        case ' ':
+          handleInput('hardDrop');
+          break;
+        case 'p':
+          setGameStatus(prev => prev === 'playing' ? 'paused' : 'playing');
+          break;
+        default:
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleInput, gameStatus]);
+  
+  // Start game when component mounts
+  useEffect(() => {
     if (gameStatus === 'new') {
       setGameStatus('playing');
     }
-    
-    if (gameStatus === 'ended') {
-      return;
-    }
-    
-    const result = handleInput(inputType);
-    
-    // If game is over, update status
-    if (gameState.gameOver) {
+  }, []);
+  
+  // Update game status when game is over
+  useEffect(() => {
+    if (gameState.gameOver && gameStatus !== 'ended') {
       setGameStatus('ended');
     }
+  }, [gameState.gameOver, gameStatus]);
+  
+  // Handle game input from controls
+  const onInput = useCallback((inputType) => {
+    if (gameStatus !== 'playing') return;
     
+    const result = handleInput(inputType);
     return result;
-  }, [gameStatus, handleInput, gameState.gameOver]);
+  }, [gameStatus, handleInput]);
+  
+  // Handle game restart
+  const handleRestart = useCallback(() => {
+    window.location.reload(); // Simple restart for now
+  }, []);
   
   return (
-    <div className="game-container">
-      <div className="flex flex-col md:flex-row gap-6">
+    <div className="game-container p-4">
+      <div className="flex flex-col md:flex-row gap-6 justify-center items-start">
         <div className="game-main">
           <GameBoard gameState={gameState} />
-          <GameControls onInput={onInput} gameOver={gameState.gameOver} />
+          <GameControls 
+            onInput={onInput} 
+            gameOver={gameState.gameOver} 
+            isPaused={gameStatus === 'paused'}
+            onRestart={handleRestart}
+          />
         </div>
         
         <div className="game-sidebar max-w-xs w-full">
@@ -43,17 +95,29 @@ const Game = ({ gameId, seed, blockSequence, blockTrisContract }) => {
             <ScoreBoard 
               score={gameState.score} 
               linesCleared={gameState.linesCleared}
+              level={gameState.level || 1}
               gameOver={gameState.gameOver} 
             />
             
             <BlockPreview nextBlock={gameState.nextBlock} />
             
-            <GameFinalize 
-              gameState={gameState}
-              finalizeGame={finalizeGame}
-              blockTrisContract={blockTrisContract}
-              disabled={!gameState.gameOver}
-            />
+            {gameState.gameOver && (
+              <div className="mt-4">
+                <GameFinalize 
+                  gameState={gameState}
+                  finalizeGame={finalizeGame}
+                  wallet={wallet}
+                  disabled={!gameState.gameOver}
+                />
+              </div>
+            )}
+            
+            {gameStatus === 'paused' && (
+              <div className="bg-gray-800 p-4 rounded-md text-center">
+                <h3 className="text-xl font-bold text-yellow-400 mb-2">Game Paused</h3>
+                <p className="text-gray-300">Press 'P' to resume</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,8 +1,33 @@
+/* Game-specific styles */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Game board styles */
+.game-board {
+  touch-action: none; /* Prevent scrolling on mobile when using touch controls */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .game-controls {
+    margin-top: 1rem;
+  }
 }
 
 .logo {
